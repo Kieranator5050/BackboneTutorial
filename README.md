@@ -1,5 +1,8 @@
 # Macys-Onboarding-Task
 
+MockAPI -> Express -> Backbone + Marionette
+
+## Requirements
 https://griddynamics.atlassian.net/wiki/spaces/MCS/pages/1122271241/UI+interns+onboarding
  
 Styling should be done with Foundation framework
