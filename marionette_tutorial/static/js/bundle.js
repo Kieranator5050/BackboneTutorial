@@ -15,7 +15,7 @@
   \***********************/
 /***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
 
-eval("var Backbone = __webpack_require__(/*! backbone */ \"./node_modules/backbone/backbone.js\");\nvar Marionette = __webpack_require__(/*! backbone.marionette */ \"./node_modules/backbone.marionette/lib/core/backbone.marionette.js\");\n\nvar ToDoModel = __webpack_require__(/*! ./models/todo */ \"./app/models/todo.js\");\n\n\nvar ToDo = Marionette.LayoutView.extend({\n  tagName: 'li',\n  template: __webpack_require__(/*! ./templates/todoitem.hbs */ \"./app/templates/todoitem.hbs\")\n});\n\n\nvar TodoList = Marionette.CompositeView.extend({\n  el: '#app-hook',\n  template: __webpack_require__(/*! ./templates/todolist.hbs */ \"./app/templates/todolist.hbs\"),\n\n  childView: ToDo,\n  childViewContainer: 'ul',\n\n  ui: {\n    assignee: '#id_assignee',\n    form: 'form',\n    text: '#id_text'\n  },\n\n  triggers: {\n    'submit @ui.form': 'add:todo:item'\n  },\n\n  collectionEvents: {\n    add: 'itemAdded'\n  },\n\n  modelEvents: {\n    change: 'render'\n  },\n\n  onAddTodoItem: function() {\n    this.model.set({\n      assignee: this.ui.assignee.val(),\n      text: this.ui.text.val()\n    });\n\n    if (this.model.isValid()) {\n      var items = this.model.pick('assignee', 'text');\n      this.collection.add(items);\n    }\n  },\n\n  itemAdded: function() {\n    this.model.set({\n      assignee: '',\n      text: ''\n    });\n  }\n});\n\nvar todo = new TodoList({\n  collection: new Backbone.Collection([\n    {assignee: 'Scott', text: 'Write a book about Marionette'},\n    {assignee: 'Andrew', text: 'Do some coding'}\n  ]),\n  model: new ToDoModel()\n});\n\ntodo.render();\n\n//# sourceURL=webpack://marionette_tutorial/./app/driver.js?");
+eval("var Marionette = __webpack_require__(/*! backbone.marionette */ \"./node_modules/backbone.marionette/lib/core/backbone.marionette.js\");\nvar TodoView = __webpack_require__(/*! ./views/layout */ \"./app/views/layout.js\");\nvar ToDoModel = __webpack_require__(/*! ./models/todo */ \"./app/models/todo.js\");\n\n\nvar initialData = [\n  {assignee: 'Scott', text: 'Write a book about Marionette'},\n  {assignee: 'Andrew', text: 'Do some coding'}\n];\n\nvar app = new Marionette.Application({\n  onStart: function(options) {\n    var todo = new TodoView({\n      collection: new Backbone.Collection(options.initialData),\n      model: new ToDoModel()\n    });\n    todo.render();\n    todo.triggerMethod('show');\n  }\n});\n\napp.start({initialData: initialData});\n\n//# sourceURL=webpack://marionette_tutorial/./app/driver.js?");
 
 /***/ }),
 
@@ -26,6 +26,36 @@ eval("var Backbone = __webpack_require__(/*! backbone */ \"./node_modules/backbo
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
 eval("var Backbone = __webpack_require__(/*! backbone */ \"./node_modules/backbone/backbone.js\");\n\n\nvar ToDo = Backbone.Model.extend({\n  defaults: {\n    assignee: '',\n    text: ''\n  },\n\n  validate: function(attrs) {\n    var errors = {};\n    var hasError = false;\n    if (!attrs.assignee) {\n      errors.assignee = 'assignee must be set';\n      hasError = true;\n    }\n    if (!attrs.text) {\n      errors.text = 'text must be set';\n      hasError = true;\n    }\n\n    if (hasError) {\n      return errors;\n    }\n  }\n});\n\n\nmodule.exports = ToDo;\n\n//# sourceURL=webpack://marionette_tutorial/./app/models/todo.js?");
+
+/***/ }),
+
+/***/ "./app/views/form.js":
+/*!***************************!*\
+  !*** ./app/views/form.js ***!
+  \***************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+eval("var Marionette = __webpack_require__(/*! backbone.marionette */ \"./node_modules/backbone.marionette/lib/core/backbone.marionette.js\");\n\nvar FormView = Marionette.LayoutView.extend({\n  tagName: 'form',\n  template: __webpack_require__(/*! ../templates/form.hbs */ \"./app/templates/form.hbs\"),\n\n  triggers: {\n    submit: 'add:todo:item'\n  },\n\n  modelEvents: {\n    change: 'render'\n  },\n\n  ui: {\n    assignee: '#id_assignee',\n    text: '#id_text'\n  }\n});\n\n\nmodule.exports = FormView;\n\n//# sourceURL=webpack://marionette_tutorial/./app/views/form.js?");
+
+/***/ }),
+
+/***/ "./app/views/layout.js":
+/*!*****************************!*\
+  !*** ./app/views/layout.js ***!
+  \*****************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+eval("var Marionette = __webpack_require__(/*! backbone.marionette */ \"./node_modules/backbone.marionette/lib/core/backbone.marionette.js\");\n\nvar FormView = __webpack_require__(/*! ./form */ \"./app/views/form.js\");\nvar ListView = __webpack_require__(/*! ./list */ \"./app/views/list.js\");\n\n\nvar Layout = Marionette.LayoutView.extend({\n  el: '#app-hook',\n\n  template: __webpack_require__(/*! ../templates/layout.hbs */ \"./app/templates/layout.hbs\"),\n\n  regions: {\n    form: '.form',\n    list: '.list'\n  },\n\n  collectionEvents: {\n    add: 'itemAdded'\n  },\n\n  onShow: function() {\n    var formView = new FormView({model: this.model});\n    var listView = new ListView({collection: this.collection});\n\n    this.showChildView('form', formView);\n    this.showChildView('list', listView);\n  },\n\n  onChildviewAddTodoItem: function(child) {\n    this.model.set({\n      assignee: child.ui.assignee.val(),\n      text: child.ui.text.val()\n    }, {validate: true});\n\n    var items = this.model.pick('assignee', 'text');\n    this.collection.add(items);\n  },\n\n  itemAdded: function() {\n    this.model.set({\n      assignee: '',\n      text: ''\n    });\n  }\n});\n\nmodule.exports = Layout;\n\n//# sourceURL=webpack://marionette_tutorial/./app/views/layout.js?");
+
+/***/ }),
+
+/***/ "./app/views/list.js":
+/*!***************************!*\
+  !*** ./app/views/list.js ***!
+  \***************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+eval("var Marionette = __webpack_require__(/*! backbone.marionette */ \"./node_modules/backbone.marionette/lib/core/backbone.marionette.js\");\n\nvar ToDo = Marionette.LayoutView.extend({\n  tagName: 'li',\n  template: __webpack_require__(/*! ../templates/todoitem.hbs */ \"./app/templates/todoitem.hbs\")\n});\n\n\nvar TodoList = Marionette.CollectionView.extend({\n  tagName: 'ul',\n  childView: ToDo\n});\n\n\nmodule.exports = TodoList;\n\n//# sourceURL=webpack://marionette_tutorial/./app/views/list.js?");
 
 /***/ }),
 
@@ -69,6 +99,26 @@ eval("var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;//     Bac
 
 /***/ }),
 
+/***/ "./app/templates/form.hbs":
+/*!********************************!*\
+  !*** ./app/templates/form.hbs ***!
+  \********************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+eval("var Handlebars = __webpack_require__(/*! ./node_modules/handlebars/runtime.js */ \"./node_modules/handlebars/runtime.js\");\nmodule.exports = (Handlebars['default'] || Handlebars).template({\"compiler\":[8,\">= 4.3.0\"],\"main\":function(container,depth0,helpers,partials,data) {\n    var helper, alias1=depth0 != null ? depth0 : (container.nullContext || {}), alias2=container.hooks.helperMissing, alias3=\"function\", alias4=container.escapeExpression, lookupProperty = container.lookupProperty || function(parent, propertyName) {\n        if (Object.prototype.hasOwnProperty.call(parent, propertyName)) {\n          return parent[propertyName];\n        }\n        return undefined\n    };\n\n  return \"<label for=\\\"id_text\\\">Todo Text</label>\\n<input type=\\\"text\\\" name=\\\"text\\\" id=\\\"id_text\\\" value=\\\"\"\n    + alias4(((helper = (helper = lookupProperty(helpers,\"text\") || (depth0 != null ? lookupProperty(depth0,\"text\") : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{\"name\":\"text\",\"hash\":{},\"data\":data,\"loc\":{\"start\":{\"line\":2,\"column\":51},\"end\":{\"line\":2,\"column\":59}}}) : helper)))\n    + \"\\\" />\\n<label for=\\\"id_assignee\\\">Assign to</label>\\n<input type=\\\"text\\\" name=\\\"assignee\\\" id=\\\"id_assignee\\\" value=\\\"\"\n    + alias4(((helper = (helper = lookupProperty(helpers,\"assignee\") || (depth0 != null ? lookupProperty(depth0,\"assignee\") : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{\"name\":\"assignee\",\"hash\":{},\"data\":data,\"loc\":{\"start\":{\"line\":4,\"column\":59},\"end\":{\"line\":4,\"column\":71}}}) : helper)))\n    + \"\\\"/>\\n\\n<button id=\\\"btn-add\\\">Add Item</button>\";\n},\"useData\":true});\n\n//# sourceURL=webpack://marionette_tutorial/./app/templates/form.hbs?");
+
+/***/ }),
+
+/***/ "./app/templates/layout.hbs":
+/*!**********************************!*\
+  !*** ./app/templates/layout.hbs ***!
+  \**********************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+eval("var Handlebars = __webpack_require__(/*! ./node_modules/handlebars/runtime.js */ \"./node_modules/handlebars/runtime.js\");\nmodule.exports = (Handlebars['default'] || Handlebars).template({\"compiler\":[8,\">= 4.3.0\"],\"main\":function(container,depth0,helpers,partials,data) {\n    return \"<div class=\\\"list\\\"></div>\\n<div class=\\\"form\\\"></div>\";\n},\"useData\":true});\n\n//# sourceURL=webpack://marionette_tutorial/./app/templates/layout.hbs?");
+
+/***/ }),
+
 /***/ "./app/templates/todoitem.hbs":
 /*!************************************!*\
   !*** ./app/templates/todoitem.hbs ***!
@@ -76,16 +126,6 @@ eval("var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;//     Bac
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
 eval("var Handlebars = __webpack_require__(/*! ./node_modules/handlebars/runtime.js */ \"./node_modules/handlebars/runtime.js\");\nmodule.exports = (Handlebars['default'] || Handlebars).template({\"compiler\":[8,\">= 4.3.0\"],\"main\":function(container,depth0,helpers,partials,data) {\n    var helper, alias1=depth0 != null ? depth0 : (container.nullContext || {}), alias2=container.hooks.helperMissing, alias3=\"function\", alias4=container.escapeExpression, lookupProperty = container.lookupProperty || function(parent, propertyName) {\n        if (Object.prototype.hasOwnProperty.call(parent, propertyName)) {\n          return parent[propertyName];\n        }\n        return undefined\n    };\n\n  return alias4(((helper = (helper = lookupProperty(helpers,\"text\") || (depth0 != null ? lookupProperty(depth0,\"text\") : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{\"name\":\"text\",\"hash\":{},\"data\":data,\"loc\":{\"start\":{\"line\":1,\"column\":0},\"end\":{\"line\":1,\"column\":8}}}) : helper)))\n    + \" - \"\n    + alias4(((helper = (helper = lookupProperty(helpers,\"assignee\") || (depth0 != null ? lookupProperty(depth0,\"assignee\") : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{\"name\":\"assignee\",\"hash\":{},\"data\":data,\"loc\":{\"start\":{\"line\":1,\"column\":11},\"end\":{\"line\":1,\"column\":23}}}) : helper)));\n},\"useData\":true});\n\n//# sourceURL=webpack://marionette_tutorial/./app/templates/todoitem.hbs?");
-
-/***/ }),
-
-/***/ "./app/templates/todolist.hbs":
-/*!************************************!*\
-  !*** ./app/templates/todolist.hbs ***!
-  \************************************/
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-eval("var Handlebars = __webpack_require__(/*! ./node_modules/handlebars/runtime.js */ \"./node_modules/handlebars/runtime.js\");\nmodule.exports = (Handlebars['default'] || Handlebars).template({\"compiler\":[8,\">= 4.3.0\"],\"main\":function(container,depth0,helpers,partials,data) {\n    var helper, alias1=depth0 != null ? depth0 : (container.nullContext || {}), alias2=container.hooks.helperMissing, alias3=\"function\", alias4=container.escapeExpression, lookupProperty = container.lookupProperty || function(parent, propertyName) {\n        if (Object.prototype.hasOwnProperty.call(parent, propertyName)) {\n          return parent[propertyName];\n        }\n        return undefined\n    };\n\n  return \"<ul></ul>\\n<form>\\n  <label for=\\\"id_text\\\">Todo Text</label>\\n  <input type=\\\"text\\\" name=\\\"text\\\" id=\\\"id_text\\\" value=\\\"\"\n    + alias4(((helper = (helper = lookupProperty(helpers,\"text\") || (depth0 != null ? lookupProperty(depth0,\"text\") : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{\"name\":\"text\",\"hash\":{},\"data\":data,\"loc\":{\"start\":{\"line\":4,\"column\":53},\"end\":{\"line\":4,\"column\":61}}}) : helper)))\n    + \"\\\" />\\n  <label for=\\\"id_assignee\\\">Assign to</label>\\n  <input type=\\\"text\\\" name=\\\"assignee\\\" id=\\\"id_assignee\\\" value=\\\"\"\n    + alias4(((helper = (helper = lookupProperty(helpers,\"assignee\") || (depth0 != null ? lookupProperty(depth0,\"assignee\") : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{\"name\":\"assignee\",\"hash\":{},\"data\":data,\"loc\":{\"start\":{\"line\":6,\"column\":61},\"end\":{\"line\":6,\"column\":73}}}) : helper)))\n    + \"\\\"/>\\n\\n  <button id=\\\"btn-add\\\">Add Item</button>\\n</form>\";\n},\"useData\":true});\n\n//# sourceURL=webpack://marionette_tutorial/./app/templates/todolist.hbs?");
 
 /***/ }),
 
